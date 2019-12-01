@@ -32,7 +32,7 @@ for:
 
 init:
   - pwsh: $PSVersionTable
-  install:
-    - pwsh: . .\actions_bootstrap.ps1
-  build_script:
-    - pwsh: Invoke-Build -File .\src\AppVeyorTest.build.ps1
+install:
+  - pwsh: . .\actions_bootstrap.ps1
+build_script:
+  - pwsh: Invoke-Build -File .\src\AppVeyorTest.build.ps1
