@@ -5,11 +5,8 @@ version: 1.0.{build}
 
 image:
   - Visual Studio 2017
-
   - Visual Studio 2019
-
   - Ubuntu1804
-
   - macOS
 skip_commits:
   files:
