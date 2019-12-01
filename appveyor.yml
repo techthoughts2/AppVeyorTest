@@ -6,11 +6,11 @@ version: 1.0.{build}
 
 image:
   - Visual Studio 2017
-
+  
   - Visual Studio 2019
-
+  
   - Ubuntu1804
-
+  
   - macOS
 skip_commits:
   files:
@@ -25,11 +25,11 @@ for:
     only:
       - image: Visual Studio 2017
   init:
-  - ps: $PSVersionTable
+    - ps: $PSVersionTable
   install:
-  - ps: . .\actions_bootstrap.ps1
+    - ps: . .\actions_bootstrap.ps1
   build_script:
-  - ps: Invoke-Build -File .\src\AppVeyorTest.build.ps1
+    - ps: Invoke-Build -File .\src\AppVeyorTest.build.ps1
 
 init:
   - pwsh: $PSVersionTable
