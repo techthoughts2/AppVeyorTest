@@ -21,8 +21,8 @@ build: off
 for:
 -
   matrix:
-  only:
-    - image: Visual Studio 2017
+    only:
+      - image: Visual Studio 2017
   init:
     - ps: $PSVersionTable
   install:
