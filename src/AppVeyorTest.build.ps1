@@ -33,9 +33,9 @@ $ModuleName = (Split-Path -Path $BuildFile -Leaf).Split('.')[0]
 #Default Build
 $str = @()
 $str = 'Clean', 'ValidateRequirements'
-
+$str += 'FormattingCheck'
 $str += 'Analyze', 'Test', 'InfraTest'
-
+$str += 'CreateHelpStart'
 $str += 'Build', 'Archive'
 Add-BuildTask -Name . -Jobs $str
 
