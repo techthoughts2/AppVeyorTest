@@ -1,5 +1,3 @@
-[System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingCmdletAliases", "", Justification = "Invoke-Build is alias only")]
-param ()
 # Bootstrap dependencies
 
 # https://docs.microsoft.com/en-us/powershell/module/packagemanagement/get-packageprovider?view=powershell-6

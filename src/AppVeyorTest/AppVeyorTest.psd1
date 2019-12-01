@@ -18,7 +18,7 @@ ModuleVersion = '0.0.1'
 # CompatiblePSEditions = @()
 
 # ID used to uniquely identify this module
-GUID = '77d938f1-79a1-4622-ba9c-63c3e53da127'
+GUID = '73dc1baf-3220-491a-978a-1a8b4875c439'
 
 # Author of this module
 Author = 'Jake Morrison'
@@ -30,7 +30,7 @@ CompanyName = 'Unknown'
 Copyright = '(c) Jake Morrison. All rights reserved.'
 
 # Description of the functionality provided by this module
-# Description = ''
+Description = 'tbd'
 
 # Minimum version of the PowerShell engine required by this module
 # PowerShellVersion = ''
