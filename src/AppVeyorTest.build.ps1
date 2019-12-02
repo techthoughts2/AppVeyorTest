@@ -5,10 +5,11 @@
     Build steps can include:
         - Clean
         - ValidateRequirements
-        - Format
+        - FormattingCheck
         - Analyze
         - Test
-        - CreateHelp
+        - InfraTest
+        - CreateHelpStart
         - Build
         - Archive
 .EXAMPLE
@@ -80,7 +81,7 @@ Set-BuildHeader {
     Write-Build DarkGray "Task $Path : $(Get-BuildSynopsis $Task)"
     # task location in a script
     Write-Build DarkGray "At $($Task.InvocationInfo.ScriptName):$($Task.InvocationInfo.ScriptLineNumber)"
-}
+}#Set-BuildHeader
 
 # Define footers similar to default but change the color to DarkGray.
 Set-BuildFooter {
@@ -88,7 +89,7 @@ Set-BuildFooter {
     Write-Build DarkGray "Done $Path, $($Task.Elapsed)"
     # # separator line
     # Write-Build Gray ('=' * 79)
-}
+}#Set-BuildFooter
 
 #Synopsis: Clean and reset Artifacts/Archive Directory
 Add-BuildTask Clean {
@@ -100,14 +101,6 @@ Add-BuildTask Clean {
     $null = New-Item $script:ArchivePath -ItemType:Directory
 
     Write-Build Green '      ...Clean Complete!'
-    <#
-    foreach ($path in $script:ArtifactsPath,$script:ArchivePath) {
-        if (Test-Path -Path $path) {
-            $null = Remove-Item -Path $path -Recurse -Force
-        }
-        $null = New-Item -ItemType Directory -Path $path -Force
-    }
-    #>
 }#Clean
 
 #Synopsis: Validate system requirements are met
