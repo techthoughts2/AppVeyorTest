@@ -8,9 +8,9 @@
         - FormattingCheck
         - Analyze
         - Test
-        - InfraTest
         - CreateHelpStart
         - Build
+        - InfraTest
         - Archive
 .EXAMPLE
     Invoke-Build
@@ -35,9 +35,9 @@ $ModuleName = (Split-Path -Path $BuildFile -Leaf).Split('.')[0]
 $str = @()
 $str = 'Clean', 'ValidateRequirements'
 $str += 'FormattingCheck'
-$str += 'Analyze', 'Test', 'InfraTest'
+$str += 'Analyze', 'Test'
 $str += 'CreateHelpStart'
-$str += 'Build', 'Archive'
+$str += 'Build', 'InfraTest', 'Archive'
 Add-BuildTask -Name . -Jobs $str
 
 #Local testing build process
@@ -81,6 +81,8 @@ Set-BuildHeader {
     Write-Build DarkGray "Task $Path : $(Get-BuildSynopsis $Task)"
     # task location in a script
     Write-Build DarkGray "At $($Task.InvocationInfo.ScriptName):$($Task.InvocationInfo.ScriptLineNumber)"
+    Write-Build Yellow "Manifest File: $script:ModuleManifestFile"
+    Write-Build Yellow "Manifest Version: $($manifestInfo.ModuleVersion)"
 }#Set-BuildHeader
 
 # Define footers similar to default but change the color to DarkGray.
@@ -184,21 +186,25 @@ Add-BuildTask FormattingCheck {
 #Synopsis: Invokes all Pester Unit Tests in the Tests\Unit folder (if it exists)
 Add-BuildTask Test {
     $codeCovPath = "$script:ArtifactsPath\ccReport\"
+    $testOutPutPath = "$script:ArtifactsPath\testOutput\"
     if (-not(Test-Path $codeCovPath)) {
         New-Item -Path $codeCovPath -ItemType Directory | Out-Null
     }
+    if (-not(Test-Path $testOutPutPath)) {
+        New-Item -Path $testOutPutPath -ItemType Directory | Out-Null
+    }
     if (Test-Path -Path $script:UnitTestsPath) {
         $invokePesterParams = @{
-            Path                   = 'Tests\Unit'
-            Strict                 = $true
-            PassThru               = $true
-            Verbose                = $false
-            EnableExit             = $false
-            CodeCoverage           = "$ModuleName\*\*.ps1"
-            CodeCoverageOutputFile = "$codeCovPath\CodeCoverage.xml"
-            # CodeCoverage                 = "$ModuleName\*\*.ps1"
-            # CodeCoverageOutputFile       = "$codeCovPath\codecoverage.xml"
-            # CodeCoverageOutputFileFormat = 'JaCoCo'
+            Path                         = 'Tests\Unit'
+            Strict                       = $true
+            PassThru                     = $true
+            Verbose                      = $false
+            EnableExit                   = $false
+            CodeCoverage                 = "$ModuleName\*\*.ps1"
+            CodeCoverageOutputFile       = "$codeCovPath\CodeCoverage.xml"
+            CodeCoverageOutputFileFormat = 'JaCoCo'
+            OutputFile                   = "$testOutPutPath\PesterTests.xml"
+            OutputFormat                 = 'NUnitXML'
         }
 
         Write-Build White '      Performing Pester Unit Tests...'
@@ -244,37 +250,6 @@ Add-BuildTask Test {
 
     }
 }#Test
-
-#Synopsis: Invokes all Pester Infrastructure Tests in the Tests\Infrastructure folder (if it exists)
-Add-BuildTask InfraTest {
-    if (Test-Path -Path $script:InfraTestsPath) {
-
-        $invokePesterParams = @{
-            Path       = 'Tests\Infrastructure'
-            Strict     = $true
-            PassThru   = $true
-            Verbose    = $false
-            EnableExit = $false
-        }
-
-        Write-Build White "      Performing Pester Infrastructure Tests in $($invokePesterParams.path)"
-        # Publish Test Results as NUnitXml
-        $testResults = Invoke-Pester @invokePesterParams
-
-        # This will output a nice json for each failed test (if running in CodeBuild)
-        if ($env:CODEBUILD_BUILD_ARN) {
-            $testResults.TestResult | ForEach-Object {
-                if ($_.Result -ne 'Passed') {
-                    ConvertTo-Json -InputObject $_ -Compress
-                }
-            }
-        }
-
-        $numberFails = $testResults.FailedCount
-        Assert-Build($numberFails -eq 0) ('Failed "{0}" unit tests.' -f $numberFails)
-        Write-Build Green '      ...Pester Infrastructure Tests Complete!'
-    }
-}#InfraTest
 
 #Synopsis: Used primarily during active development to generate xml file to graphically display code coverage in VSCode using Coverage Gutters
 Add-BuildTask DevCC {
@@ -327,7 +302,7 @@ Add-BuildTask CreateMarkdownHelp -After CreateHelpStart {
         }
     }
     # Replace each missing element we need for a proper generic module page .md file
-    $ModulePageFileContent = Get-Content -raw $ModulePage
+    $ModulePageFileContent = Get-Content -Raw $ModulePage
     $ModulePageFileContent = $ModulePageFileContent -replace '{{Manually Enter Description Here}}', $script:ModuleDescription
     $Script:FunctionsToExport | ForEach-Object {
         Write-Build DarkGray "             Updating definition for the following function: $($_)"
@@ -401,7 +376,7 @@ Add-BuildTask Build {
     #$private = "$script:ModuleSourcePath\Private"
     $scriptContent = [System.Text.StringBuilder]::new()
     #$powerShellScripts = Get-ChildItem -Path $script:ModuleSourcePath -Filter '*.ps1' -Recurse
-    $powerShellScripts = Get-ChildItem -Path $script:ArtifactsPath -Filter '*.ps1' -Recurse
+    $powerShellScripts = Get-ChildItem -Path $script:ArtifactsPath -Recurse | Where-Object { $_.Name -match '^*.ps1$' }
     foreach ($script in $powerShellScripts) {
         $null = $scriptContent.Append((Get-Content -Path $script.FullName -Raw))
         $null = $scriptContent.AppendLine('')
@@ -418,7 +393,9 @@ Add-BuildTask Build {
     if (Test-Path "$($script:ArtifactsPath)\Private") {
         Remove-Item "$($script:ArtifactsPath)\Private" -Recurse -Force -ErrorAction Stop
     }
-
+    if (Test-Path "$($script:ArtifactsPath)\Imports.ps1") {
+        Remove-Item "$($script:ArtifactsPath)\Imports.ps1" -Force -ErrorAction SilentlyContinue
+    }
     # here you could move your docs up to your repos doc level if you wanted
     # Write-Build Gray '        Overwriting docs output...'
     # Move-Item "$($script:ArtifactsPath)\docs\*.md" -Destination "..\docs\" -Force
@@ -427,6 +404,37 @@ Add-BuildTask Build {
 
     Write-Build Green '      ...Build Complete!'
 }#Build
+
+#Synopsis: Invokes all Pester Infrastructure Tests in the Tests\Infrastructure folder (if it exists)
+Add-BuildTask InfraTest {
+    if (Test-Path -Path $script:InfraTestsPath) {
+
+        $invokePesterParams = @{
+            Path       = 'Tests\Infrastructure'
+            Strict     = $true
+            PassThru   = $true
+            Verbose    = $false
+            EnableExit = $false
+        }
+
+        Write-Build White "      Performing Pester Infrastructure Tests in $($invokePesterParams.path)"
+        # Publish Test Results as NUnitXml
+        $testResults = Invoke-Pester @invokePesterParams
+
+        # This will output a nice json for each failed test (if running in CodeBuild)
+        if ($env:CODEBUILD_BUILD_ARN) {
+            $testResults.TestResult | ForEach-Object {
+                if ($_.Result -ne 'Passed') {
+                    ConvertTo-Json -InputObject $_ -Compress
+                }
+            }
+        }
+
+        $numberFails = $testResults.FailedCount
+        Assert-Build($numberFails -eq 0) ('Failed "{0}" unit tests.' -f $numberFails)
+        Write-Build Green '      ...Pester Infrastructure Tests Complete!'
+    }
+}#InfraTest
 
 #Synopsis: Creates an archive of the built Module
 Add-BuildTask Archive {
