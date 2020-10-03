@@ -455,8 +455,8 @@ Add-BuildTask Build {
 
     #here we update the parent level docs. If you would prefer not to update them, comment out this section.
     Write-Build Gray '        Overwriting docs output...'
-    Move-Item "$($script:ArtifactsPath)\docs\*.md" -Destination "..\docs\" -Force
-    Remove-Item "$($script:ArtifactsPath)\docs" -Recurse -Force -ErrorAction Stop
+    Move-Item "$script:ArtifactsPath\docs\*.md" -Destination "..\docs\" -Force
+    Remove-Item "$script:ArtifactsPath\docs" -Recurse -Force -ErrorAction Stop
     Write-Build Gray '        ...Docs output completed.'
 
     Write-Build Green '      ...Build Complete!'
