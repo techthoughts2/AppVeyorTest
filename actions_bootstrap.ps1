@@ -30,17 +30,28 @@ $null = $modulesToInstall.Add(([PSCustomObject]@{
             ModuleVersion = '0.12.0'
         }))
 
+$null = $modulesToInstall.Add(([PSCustomObject]@{
+            ModuleName    = 'Microsoft.PowerShell.SecretManagement'
+            ModuleVersion = '0.5.3-preview4'
+        }))
+
 'Installing PowerShell Modules'
 foreach ($module in $modulesToInstall) {
     $installSplat = @{
-        Name            = $module.ModuleName
-        RequiredVersion = $module.ModuleVersion
-        Repository      = 'PSGallery'
-        Force           = $true
-        ErrorAction     = 'Stop'
+        Name               = $module.ModuleName
+        RequiredVersion    = $module.ModuleVersion
+        Repository         = 'PSGallery'
+        SkipPublisherCheck = $true
+        Force              = $true
+        ErrorAction        = 'Stop'
     }
     try {
-        Install-Module @installSplat
+        if ($module.ModuleName -eq 'Microsoft.PowerShell.SecretManagement') {
+            Install-Module @installSplat -AllowPrerelease
+        }
+        else {
+            Install-Module @installSplat
+        }
         Import-Module -Name $module.ModuleName -ErrorAction Stop
         '  - Successfully installed {0}' -f $module.ModuleName
     }

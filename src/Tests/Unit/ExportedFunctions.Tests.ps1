@@ -1,7 +1,7 @@
 #-------------------------------------------------------------------------
 Set-Location -Path $PSScriptRoot
 #-------------------------------------------------------------------------
-$ModuleName = 'AppVeyorTest'
+$ModuleName = 'AppVeyorVault'
 $PathToManifest = [System.IO.Path]::Combine('..', '..', $ModuleName, "$ModuleName.psd1")
 #-------------------------------------------------------------------------
 if (Get-Module -Name $ModuleName -ErrorAction 'SilentlyContinue') {
@@ -33,23 +33,4 @@ Describe -Name $ModuleName -Fixture {
         }
     }
 
-    Context -Name 'Command Help' -Fixture {
-        foreach ($command in $moduleExported) {
-            Context -Name $command -Fixture {
-                $help = Get-Help -Name $command -Full
-
-                It -Name 'Includes a Synopsis' -Test {
-                    $help.Synopsis | Should -Not -BeNullOrEmpty
-                }
-
-                It -Name 'Includes a Description' -Test {
-                    $help.description.Text | Should -Not -BeNullOrEmpty
-                }
-
-                It -Name 'Includes an Example' -Test {
-                    $help.examples.example | Should -Not -BeNullOrEmpty
-                }
-            }
-        }
-    }
 }

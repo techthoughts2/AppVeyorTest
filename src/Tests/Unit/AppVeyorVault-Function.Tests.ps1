@@ -1,7 +1,8 @@
 #-------------------------------------------------------------------------
 Set-Location -Path $PSScriptRoot
 #-------------------------------------------------------------------------
-$ModuleName = 'AppVeyorTest'
+$ModuleName = 'AppVeyorVault'
+$vaultName = 'AppVeyorVault'
 $PathToManifest = [System.IO.Path]::Combine('..', '..', $ModuleName, "$ModuleName.psd1")
 #-------------------------------------------------------------------------
 if (Get-Module -Name $ModuleName -ErrorAction 'SilentlyContinue') {
@@ -12,28 +13,23 @@ Import-Module $PathToManifest -Force
 #-------------------------------------------------------------------------
 $WarningPreference = "SilentlyContinue"
 #-------------------------------------------------------------------------
-#Import-Module $moduleNamePath -Force
 
-InModuleScope 'AppVeyorTest' {
-    #-------------------------------------------------------------------------
-    $WarningPreference = "SilentlyContinue"
-    #-------------------------------------------------------------------------
-    Describe 'AppVeyorTest Private Function Tests' -Tag Unit {
-        Context 'FunctionName' {
-            <#
+Describe 'AppVeyorVault Vault Extension Tests' -Tag Unit {
+    BeforeAll {
+        Import-Module -Name Microsoft.PowerShell.SecretManagement
+        Get-SecretVault $vaultName | Unregister-SecretVault
+        Register-SecretVault -Name $vaultName -ModuleName $PathToManifest
+    }#beforeAll
+
+    AfterAll {
+        Unregister-SecretVault -Name $vaultName -ErrorAction Ignore
+    }#afterAll
+
+    Context 'Your First Vault Test' {
+        <#
             It 'should ...' {
 
             }#it
-            #>
-        }#context_FunctionName
-    }#describe_PrivateFunctions
-    Describe 'AppVeyorTest Public Function Tests' -Tag Unit {
-        Context 'FunctionName' {
-            <#
-                It 'should ...' {
-
-                }#it
-                #>
-        }#context_FunctionName
-    }#describe_testFunctions
-}#inModule
+        #>
+    }#context_FunctionName
+}#describe_vaultExtension
