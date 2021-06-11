@@ -227,8 +227,9 @@ Add-BuildTask FormattingCheck {
 
 #Synopsis: Invokes all Pester Unit Tests in the Tests\Unit folder (if it exists)
 Add-BuildTask Test {
+
     Write-Build White "      Importing desired Pester version. Min: $script:MinPesterVersion Max: $script:MaxPesterVersion"
-    Remove-Module -Name Pester -Force
+    Remove-Module -Name Pester -Force -ErrorAction SilentlyContinue # there are instances where some containers have Pester already in the session
     Import-Module -Name Pester -MinimumVersion $script:MinPesterVersion -MaximumVersion $script:MaxPesterVersion -ErrorAction 'Stop'
 
     $codeCovPath = "$script:ArtifactsPath\ccReport\"
@@ -303,6 +304,7 @@ Add-BuildTask Test {
 Add-BuildTask DevCC {
     Write-Build White '      Generating code coverage report at root...'
     Write-Build White "      Importing desired Pester version. Min: $script:MinPesterVersion Max: $script:MaxPesterVersion"
+    Remove-Module -Name Pester -Force -ErrorAction SilentlyContinue # there are instances where some containers have Pester already in the session
     Import-Module -Name Pester -MinimumVersion $script:MinPesterVersion -MaximumVersion $script:MaxPesterVersion -ErrorAction 'Stop'
     $invokePesterParams = @{
         Path                   = 'Tests\Unit'
@@ -488,6 +490,7 @@ Add-BuildTask Build {
 Add-BuildTask InfraTest {
     if (Test-Path -Path $script:InfraTestsPath) {
         Write-Build White "      Importing desired Pester version. Min: $script:MinPesterVersion Max: $script:MaxPesterVersion"
+        Remove-Module -Name Pester -Force -ErrorAction SilentlyContinue # there are instances where some containers have Pester already in the session
         Import-Module -Name Pester -MinimumVersion $script:MinPesterVersion -MaximumVersion $script:MaxPesterVersion -ErrorAction 'Stop'
 
         Write-Build White "      Performing Pester Infrastructure Tests in $($invokePesterParams.path)"

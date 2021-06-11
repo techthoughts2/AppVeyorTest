@@ -6,13 +6,13 @@ version: 1.0.{build}
 # https://www.appveyor.com/docs/appveyor-yml/
 
 image:
-  # - Visual Studio 2017
+  - Visual Studio 2017
 
-  # - Visual Studio 2019
+  - Visual Studio 2019
 
   - Ubuntu2004
 
-  # - macOS
+  - macOS
 skip_commits:
   files:
     - docs/*
@@ -32,7 +32,7 @@ for:
   install:
     - ps: . .\actions_bootstrap.ps1
   build_script:
-    - ps: Remove-Module Pester -ErrorAction SilentlyContinue;Import-Module Pester -RequiredVersion 4.10.1;Invoke-Build -File .\src\AppVeyorTest.build.ps1
+    - ps: Invoke-Build -File .\src\AppVeyorTest.build.ps1
 
 init:
   - pwsh: $PSVersionTable
