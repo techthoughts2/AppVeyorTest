@@ -227,7 +227,9 @@ Add-BuildTask FormattingCheck {
 
 #Synopsis: Invokes all Pester Unit Tests in the Tests\Unit folder (if it exists)
 Add-BuildTask Test {
-
+    Write-Build White "      Checking Pester..."
+    Get-Module Pester
+    Write-Build White "      Pester check completed."
     Write-Build White "      Importing desired Pester version. Min: $script:MinPesterVersion Max: $script:MaxPesterVersion"
     Import-Module -Name Pester -MinimumVersion $script:MinPesterVersion -MaximumVersion $script:MaxPesterVersion -ErrorAction 'Stop'
 
@@ -488,7 +490,6 @@ Add-BuildTask Build {
 Add-BuildTask InfraTest {
     if (Test-Path -Path $script:InfraTestsPath) {
         Write-Build White "      Importing desired Pester version. Min: $script:MinPesterVersion Max: $script:MaxPesterVersion"
-        Get-Module
         Import-Module -Name Pester -MinimumVersion $script:MinPesterVersion -MaximumVersion $script:MaxPesterVersion -ErrorAction 'Stop'
 
         Write-Build White "      Performing Pester Infrastructure Tests in $($invokePesterParams.path)"
