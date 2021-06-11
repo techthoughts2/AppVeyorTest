@@ -13,10 +13,11 @@ $null = $modulesToInstall.Add(([PSCustomObject]@{
             ModuleName    = 'Pester'
             ModuleVersion = '4.10.1'
         }))
+
 # https://github.com/nightroman/Invoke-Build
 $null = $modulesToInstall.Add(([PSCustomObject]@{
             ModuleName    = 'InvokeBuild'
-            ModuleVersion = '5.6.1'
+            ModuleVersion = '5.8.0'
         }))
 # https://github.com/PowerShell/PSScriptAnalyzer
 $null = $modulesToInstall.Add(([PSCustomObject]@{
@@ -30,10 +31,7 @@ $null = $modulesToInstall.Add(([PSCustomObject]@{
             ModuleVersion = '0.12.0'
         }))
 
-$null = $modulesToInstall.Add(([PSCustomObject]@{
-            ModuleName    = 'Microsoft.PowerShell.SecretManagement'
-            ModuleVersion = '0.5.3-preview4'
-        }))
+
 
 'Installing PowerShell Modules'
 foreach ($module in $modulesToInstall) {
@@ -46,12 +44,7 @@ foreach ($module in $modulesToInstall) {
         ErrorAction        = 'Stop'
     }
     try {
-        if ($module.ModuleName -eq 'Microsoft.PowerShell.SecretManagement') {
-            Install-Module @installSplat -AllowPrerelease
-        }
-        else {
-            Install-Module @installSplat
-        }
+        Install-Module @installSplat
         Import-Module -Name $module.ModuleName -ErrorAction Stop
         '  - Successfully installed {0}' -f $module.ModuleName
     }
