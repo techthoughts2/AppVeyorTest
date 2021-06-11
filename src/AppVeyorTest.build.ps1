@@ -488,6 +488,7 @@ Add-BuildTask Build {
 Add-BuildTask InfraTest {
     if (Test-Path -Path $script:InfraTestsPath) {
         Write-Build White "      Importing desired Pester version. Min: $script:MinPesterVersion Max: $script:MaxPesterVersion"
+        Get-Module Pester
         Import-Module -Name Pester -MinimumVersion $script:MinPesterVersion -MaximumVersion $script:MaxPesterVersion -ErrorAction 'Stop'
 
         Write-Build White "      Performing Pester Infrastructure Tests in $($invokePesterParams.path)"

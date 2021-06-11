@@ -6,13 +6,13 @@ version: 1.0.{build}
 # https://www.appveyor.com/docs/appveyor-yml/
 
 image:
-  - Visual Studio 2017
+  # - Visual Studio 2017
 
-  - Visual Studio 2019
+  # - Visual Studio 2019
 
   - Ubuntu2004
 
-  - macOS
+  # - macOS
 skip_commits:
   files:
     - docs/*
