@@ -10,7 +10,7 @@ image:
 
   - Visual Studio 2019
 
-  - Ubuntu1804
+  - Ubuntu2004
 
   - macOS
 skip_commits:
