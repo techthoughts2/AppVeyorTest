@@ -227,10 +227,8 @@ Add-BuildTask FormattingCheck {
 
 #Synopsis: Invokes all Pester Unit Tests in the Tests\Unit folder (if it exists)
 Add-BuildTask Test {
-    Write-Build White "      Checking Pester..."
-    Get-Module Pester
-    Write-Build White "      Pester check completed."
     Write-Build White "      Importing desired Pester version. Min: $script:MinPesterVersion Max: $script:MaxPesterVersion"
+    Remove-Module -Name Pester -Force
     Import-Module -Name Pester -MinimumVersion $script:MinPesterVersion -MaximumVersion $script:MaxPesterVersion -ErrorAction 'Stop'
 
     $codeCovPath = "$script:ArtifactsPath\ccReport\"
