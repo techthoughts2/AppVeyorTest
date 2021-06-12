@@ -26,6 +26,7 @@ Describe $ModuleName {
         }
 
         Context 'Explicitly exported commands' -Fixture {
+            $manifestExported = ($manifestContent.ExportedFunctions).Keys
             foreach ($command in $moduleExported) {
                 It -Name "Includes the $command in the Module Manifest ExportedFunctions" -Test {
                     $manifestExported -contains $command | Should -BeTrue
