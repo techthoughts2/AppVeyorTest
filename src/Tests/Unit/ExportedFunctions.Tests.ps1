@@ -10,10 +10,11 @@ if (Get-Module -Name $ModuleName -ErrorAction 'SilentlyContinue') {
 }
 Import-Module $PathToManifest -Force
 #-------------------------------------------------------------------------
-Describe $ModuleName {
+$manifestContent = Test-ModuleManifest -Path $PathToManifest
+$moduleExported = Get-Command -Module $ModuleName | Select-Object -ExpandProperty Name
+#-------------------------------------------------------------------------
 
-    $manifestContent = Test-ModuleManifest -Path $PathToManifest
-    $moduleExported = Get-Command -Module $ModuleName | Select-Object -ExpandProperty Name
+Describe $ModuleName {
 
     Context 'Exported Commands' -Fixture {
         $manifestExported = ($manifestContent.ExportedFunctions).Keys
@@ -33,8 +34,11 @@ Describe $ModuleName {
         }
     }
 
-    Context 'Command Help' -Fixture {
+    Context 'Command Help' -ForEach $moduleExported {
         foreach ($command in $moduleExported) {
+            BeforeAll {
+                $help = Get-Help -Name $_ -Full
+            }
             Context $command -Fixture {
                 $help = Get-Help -Name $command -Full
 
