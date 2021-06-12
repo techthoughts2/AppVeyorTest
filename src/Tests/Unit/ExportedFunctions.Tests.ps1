@@ -17,17 +17,24 @@ $moduleExported = Get-Command -Module $ModuleName | Select-Object -ExpandPropert
 Describe $ModuleName {
 
     Context 'Exported Commands' -Fixture {
-        $manifestExported = ($manifestContent.ExportedFunctions).Keys
 
         Context 'Number of commands' -Fixture {
             It -Name 'Exports the same number of public funtions as what is listed in the Module Manifest' -Test {
+                $manifestExported = ($manifestContent.ExportedFunctions).Keys
                 $manifestExported.Count | Should -BeExactly $moduleExported.Count
             }
         }
 
-        Context 'Explicitly exported commands' -Fixture {
-            $manifestExported = ($manifestContent.ExportedFunctions).Keys
+        Context 'Explicitly exported commands' -ForEach $moduleExported {
             foreach ($command in $moduleExported) {
+                BeforeAll {
+                    $command = $_
+                    $ModuleName = 'AppVeyorTest'
+                    $PathToManifest = [System.IO.Path]::Combine('..', '..', $ModuleName, "$ModuleName.psd1")
+                    $manifestContent = Test-ModuleManifest -Path $PathToManifest
+                    $moduleExported = Get-Command -Module $ModuleName | Select-Object -ExpandProperty Name
+                    $manifestExported = ($manifestContent.ExportedFunctions).Keys
+                }
                 It -Name "Includes the $command in the Module Manifest ExportedFunctions" -Test {
                     $manifestExported -contains $command | Should -BeTrue
                 }
