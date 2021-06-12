@@ -89,7 +89,7 @@ Enter-Build {
 
 
     [version]$script:MinPesterVersion = '5.0.0'
-    [version]$script:PesterVersion = '5.99.99'
+    [version]$script:MaxPesterVersion = '5.99.99'
 } #Enter-Build
 
 # Define headers as separator, task path, synopsis, and location, e.g. for Ctrl+Click in VSCode.

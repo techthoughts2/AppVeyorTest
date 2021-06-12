@@ -18,7 +18,7 @@ ModuleVersion = '0.0.1'
 # CompatiblePSEditions = @()
 
 # ID used to uniquely identify this module
-GUID = '45d53ec3-c5a1-4da9-818f-a46dfddcee35'
+GUID = 'c8a5001a-ae34-4470-8767-d0cf441c4960'
 
 # Author of this module
 Author = 'Jake Morrison'
