@@ -10,6 +10,7 @@
         - FormattingCheck
         - Test
         - DevCC
+        - CreateHelpStart
         - Build
         - InfraTest
         - Archive
@@ -49,11 +50,15 @@ $str = @()
 $str = 'Clean', 'ValidateRequirements', 'ImportModuleManifest'
 $str += 'FormattingCheck'
 $str += 'Analyze', 'Test'
+$str += 'CreateHelpStart'
 $str += 'Build', 'InfraTest', 'Archive'
 Add-BuildTask -Name . -Jobs $str
 
 #Local testing build process
 Add-BuildTask TestLocal Clean, ImportModuleManifest, Analyze, Test
+
+#Local help file creation process
+Add-BuildTask HelpLocal Clean, ImportModuleManifest, CreateHelpStart
 
 # Pre-build variables to be used by other portions of the script
 Enter-Build {
@@ -80,7 +85,7 @@ Enter-Build {
     $script:BuildModuleRootFile = Join-Path -Path $script:ArtifactsPath -ChildPath "$($script:ModuleName).psm1"
 
     # Ensure our builds fail until if below a minimum defined code test coverage threshold
-    $script:coverageThreshold = 0
+    $script:coverageThreshold = 30
 
 
     [version]$script:MinPesterVersion = '5.0.0'
@@ -243,7 +248,7 @@ Add-BuildTask Test {
         $pesterConfiguration.Run.PassThru = $true
         $pesterConfiguration.Run.Exit = $false
         $pesterConfiguration.CodeCoverage.Enabled = $true
-        $pesterConfiguration.CodeCoverage.Path = "..\..\$ModuleName\*\*.psm1"
+        $pesterConfiguration.CodeCoverage.Path = "..\..\..\$ModuleName\*\*.ps1"
         $pesterConfiguration.CodeCoverage.CoveragePercentTarget = $script:coverageThreshold
         $pesterConfiguration.CodeCoverage.OutputPath = "$codeCovPath\CodeCoverage.xml"
         $pesterConfiguration.CodeCoverage.OutputFormat = 'JaCoCo'
@@ -316,11 +321,125 @@ Add-BuildTask DevCC {
     Write-Build Green '      ...Code Coverage report generated!'
 } #DevCC
 
+# Synopsis: Build help for module
+Add-BuildTask CreateHelpStart {
+    Write-Build White '      Performing all help related actions.'
+
+    Write-Build Gray '           Importing platyPS v0.12.0 ...'
+    Import-Module platyPS -RequiredVersion 0.12.0 -ErrorAction Stop
+    Write-Build Gray '           ...platyPS imported successfully.'
+} #CreateHelpStart
+
+# Synopsis: Build markdown help files for module and fail if help information is missing
+Add-BuildTask CreateMarkdownHelp -After CreateHelpStart {
+    $ModulePage = "$script:ArtifactsPath\docs\$($ModuleName).md"
+
+    $markdownParams = @{
+        Module         = $ModuleName
+        OutputFolder   = "$script:ArtifactsPath\docs\"
+        Force          = $true
+        WithModulePage = $true
+        Locale         = 'en-US'
+        FwLink         = "NA"
+        HelpVersion    = $script:ModuleVersion
+    }
+
+    Write-Build Gray '           Generating markdown files...'
+    $null = New-MarkdownHelp @markdownParams
+    Write-Build Gray '           ...Markdown generation completed.'
+
+    Write-Build Gray '           Replacing markdown elements...'
+    # Replace multi-line EXAMPLES
+    $OutputDir = "$script:ArtifactsPath\docs\"
+    $OutputDir | Get-ChildItem -File | ForEach-Object {
+        # fix formatting in multiline examples
+        $content = Get-Content $_.FullName -Raw
+        $newContent = $content -replace '(## EXAMPLE [^`]+?```\r\n[^`\r\n]+?\r\n)(```\r\n\r\n)([^#]+?\r\n)(\r\n)([^#]+)(#)', '$1$3$2$4$5$6'
+        if ($newContent -ne $content) {
+            Set-Content -Path $_.FullName -Value $newContent -Force
+        }
+    }
+    # Replace each missing element we need for a proper generic module page .md file
+    $ModulePageFileContent = Get-Content -Raw $ModulePage
+    $ModulePageFileContent = $ModulePageFileContent -replace '{{Manually Enter Description Here}}', $script:ModuleDescription
+    $script:FunctionsToExport | ForEach-Object {
+        Write-Build DarkGray "             Updating definition for the following function: $($_)"
+        $TextToReplace = "{{Manually Enter $($_) Description Here}}"
+        $ReplacementText = (Get-Help -Detailed $_).Synopsis
+        $ModulePageFileContent = $ModulePageFileContent -replace $TextToReplace, $ReplacementText
+    }
+
+    $ModulePageFileContent | Out-File $ModulePage -Force -Encoding:utf8
+    Write-Build Gray '           ...Markdown replacements complete.'
+
+    Write-Build Gray '           Verifying GUID...'
+    $MissingGUID = Select-String -Path "$script:ArtifactsPath\docs\*.md" -Pattern "(00000000-0000-0000-0000-000000000000)"
+    if ($MissingGUID.Count -gt 0) {
+        Write-Build Yellow '             The documentation that got generated resulted in a generic GUID. Check the GUID entry of your module manifest.'
+        throw 'Missing GUID. Please review and rebuild.'
+    }
+
+    Write-Build Gray '           Checking for missing documentation in md files...'
+    $MissingDocumentation = Select-String -Path "$script:ArtifactsPath\docs\*.md" -Pattern "({{.*}})"
+    if ($MissingDocumentation.Count -gt 0) {
+        Write-Build Yellow '             The documentation that got generated resulted in missing sections which should be filled out.'
+        Write-Build Yellow '             Please review the following sections in your comment based help, fill out missing information and rerun this build:'
+        Write-Build Yellow '             (Note: This can happen if the .EXTERNALHELP CBH is defined for a function before running this build.)'
+        Write-Build Yellow "             Path of files with issues: $script:ArtifactsPath\docs\"
+        $MissingDocumentation | Select-Object FileName, LineNumber, Line | Format-Table -AutoSize
+        throw 'Missing documentation. Please review and rebuild.'
+    }
+
+    Write-Build Gray '           Checking for missing SYNOPSIS in md files...'
+    $fSynopsisOutput = @()
+    $synopsisEval = Select-String -Path "$script:ArtifactsPath\docs\*.md" -Pattern "^## SYNOPSIS$" -Context 0, 1
+    $synopsisEval | ForEach-Object {
+        $chAC = $_.Context.DisplayPostContext.ToCharArray()
+        if ($null -eq $chAC) {
+            $fSynopsisOutput += $_.FileName
+        }
+    }
+    if ($fSynopsisOutput) {
+        Write-Build Yellow "             The following files are missing SYNOPSIS:"
+        $fSynopsisOutput
+        throw 'SYNOPSIS information missing. Please review.'
+    }
+
+    Write-Build Gray '           ...Markdown generation complete.'
+} #CreateMarkdownHelp
+
+# Synopsis: Build the external xml help file from markdown help files with PlatyPS
+Add-BuildTask CreateExternalHelp -After CreateMarkdownHelp {
+    Write-Build Gray '           Creating external xml help file...'
+    $null = New-ExternalHelp "$script:ArtifactsPath\docs" -OutputPath "$script:ArtifactsPath\en-US\" -Force
+    Write-Build Gray '           ...External xml help file created!'
+} #CreateExternalHelp
+
+Add-BuildTask CreateHelpComplete -After CreateExternalHelp {
+    Write-Build Green '      ...CreateHelp Complete!'
+} #CreateHelpStart
+
+# Synopsis: Replace comment based help (CBH) with external help in all public functions for this project
+Add-BuildTask UpdateCBH -After AssetCopy {
+    $ExternalHelp = @"
+<#
+.EXTERNALHELP $($ModuleName)-help.xml
+#>
+"@
+
+    $CBHPattern = "(?ms)(\<#.*\.SYNOPSIS.*?#>)"
+    Get-ChildItem -Path "$script:ArtifactsPath\Public\*.ps1" -File | ForEach-Object {
+        $FormattedOutFile = $_.FullName
+        Write-Output "      Replacing CBH in file: $($FormattedOutFile)"
+        $UpdatedFile = (Get-Content  $FormattedOutFile -raw) -replace $CBHPattern, $ExternalHelp
+        $UpdatedFile | Out-File -FilePath $FormattedOutFile -force -Encoding:utf8
+    }
+} #UpdateCBH
+
 # Synopsis: Copies module assets to Artifacts folder
 Add-BuildTask AssetCopy -Before Build {
     Write-Build Gray '        Copying assets to Artifacts...'
-    $dirDest = New-Item -Path "$script:ArtifactsPath\$ModuleName.Extension" -ItemType Directory -ErrorAction Stop
-    Copy-Item -Path "$script:ModuleSourcePath\$ModuleName.Extension\*" -Destination $dirDest -Recurse -Force -ErrorAction Stop
+    Copy-Item -Path "$script:ModuleSourcePath\*" -Destination $script:ArtifactsPath -Exclude *.psd1, *.psm1 -Recurse -ErrorAction Stop
     Write-Build Gray '        ...Assets copy complete.'
 } #AssetCopy
 
@@ -333,12 +452,48 @@ Add-BuildTask Build {
     #Copy-Item -Path $script:ModuleSourcePath\bin -Destination $script:ArtifactsPath -Recurse -ErrorAction Stop
     Write-Build Gray '        ...manifest copy complete.'
 
+    Write-Build Gray '        Merging Public and Private functions to one module file...'
+    #$private = "$script:ModuleSourcePath\Private"
+    $scriptContent = [System.Text.StringBuilder]::new()
+    #$powerShellScripts = Get-ChildItem -Path $script:ModuleSourcePath -Filter '*.ps1' -Recurse
+    $powerShellScripts = Get-ChildItem -Path $script:ArtifactsPath -Recurse | Where-Object { $_.Name -match '^*.ps1$' }
+    foreach ($script in $powerShellScripts) {
+        $null = $scriptContent.Append((Get-Content -Path $script.FullName -Raw))
+        $null = $scriptContent.AppendLine('')
+        $null = $scriptContent.AppendLine('')
+    }
+    $scriptContent.ToString() | Out-File -FilePath $script:BuildModuleRootFile -Encoding utf8 -Force
+    Write-Build Gray '        ...Module creation complete.'
+
+    Write-Build Gray '        Cleaning up leftover artifacts...'
+    #cleanup artifacts that are no longer required
+    if (Test-Path "$script:ArtifactsPath\Public") {
+        Remove-Item "$script:ArtifactsPath\Public" -Recurse -Force -ErrorAction Stop
+    }
+    if (Test-Path "$script:ArtifactsPath\Private") {
+        Remove-Item "$script:ArtifactsPath\Private" -Recurse -Force -ErrorAction Stop
+    }
+    if (Test-Path "$script:ArtifactsPath\Imports.ps1") {
+        Remove-Item "$script:ArtifactsPath\Imports.ps1" -Force -ErrorAction SilentlyContinue
+    }
+
+    if (Test-Path "$script:ArtifactsPath\docs") {
+        #here we update the parent level docs. If you would prefer not to update them, comment out this section.
+        Write-Build Gray '        Overwriting docs output...'
+        if (-not (Test-Path '..\docs\')) {
+            New-Item -Path '..\docs\' -ItemType Directory -Force | Out-Null
+        }
+        Move-Item "$script:ArtifactsPath\docs\*.md" -Destination '..\docs\' -Force
+        Remove-Item "$script:ArtifactsPath\docs" -Recurse -Force -ErrorAction Stop
+        Write-Build Gray '        ...Docs output completed.'
+    }
+
     Write-Build Green '      ...Build Complete!'
 } #Build
 
 #Synopsis: Invokes all Pester Infrastructure Tests in the Tests\Infrastructure folder (if it exists)
 Add-BuildTask InfraTest {
-    if (Get-ChildItem -Path $script:InfraTestsPath -Filter "*.Tests.ps1" -Recurse) {
+    if (Test-Path -Path $script:InfraTestsPath) {
         Write-Build White "      Importing desired Pester version. Min: $script:MinPesterVersion Max: $script:MaxPesterVersion"
         Remove-Module -Name Pester -Force -ErrorAction SilentlyContinue # there are instances where some containers have Pester already in the session
         Import-Module -Name Pester -MinimumVersion $script:MinPesterVersion -MaximumVersion $script:MaxPesterVersion -ErrorAction 'Stop'

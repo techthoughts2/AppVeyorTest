@@ -32,14 +32,14 @@ for:
   install:
     - ps: . .\actions_bootstrap.ps1
   build_script:
-    - ps: Invoke-Build -File .\src\AppVeyorVault.build.ps1
+    - ps: Invoke-Build -File .\src\AppVeyorTest.build.ps1
 
 init:
   - pwsh: $PSVersionTable
 install:
   - pwsh: . .\actions_bootstrap.ps1
 build_script:
-  - pwsh: Invoke-Build -File .\src\AppVeyorVault.build.ps1
+  - pwsh: Invoke-Build -File .\src\AppVeyorTest.build.ps1
 
 artifacts:
   - path: src/Artifacts/testOutput/PesterTests.xml
