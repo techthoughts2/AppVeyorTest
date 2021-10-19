@@ -1,12 +1,10 @@
-BeforeAll {
-    #-------------------------------------------------------------------------
-    Set-Location -Path $PSScriptRoot
-    #-------------------------------------------------------------------------
-    $ModuleName = 'AppVeyorTest'
-    $PathToManifest = [System.IO.Path]::Combine('..', '..', $ModuleName, "$ModuleName.psd1")
-    $PathToModule = [System.IO.Path]::Combine('..', '..', $ModuleName, "$ModuleName.psm1")
-    #-------------------------------------------------------------------------
-}
+#-------------------------------------------------------------------------
+Set-Location -Path $PSScriptRoot
+#-------------------------------------------------------------------------
+$ModuleName = 'AppVeyorTest'
+$PathToManifest = [System.IO.Path]::Combine('..', '..', $ModuleName, "$ModuleName.psd1")
+$PathToModule = [System.IO.Path]::Combine('..', '..', $ModuleName, "$ModuleName.psm1")
+#-------------------------------------------------------------------------
 Describe 'Module Tests' -Tag Unit {
     Context "Module Tests" {
         $script:manifestEval = $null
