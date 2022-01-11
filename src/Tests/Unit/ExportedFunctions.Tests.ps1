@@ -10,13 +10,18 @@ if (Get-Module -Name $ModuleName -ErrorAction 'SilentlyContinue') {
 }
 Import-Module $PathToManifest -Force
 #-------------------------------------------------------------------------
-Describe $ModuleName {
 
+BeforeAll {
+    Set-Location -Path $PSScriptRoot
+    $ModuleName = 'AppVeyorTest'
+    $PathToManifest = [System.IO.Path]::Combine('..', '..', $ModuleName, "$ModuleName.psd1")
     $manifestContent = Test-ModuleManifest -Path $PathToManifest
     $moduleExported = Get-Command -Module $ModuleName | Select-Object -ExpandProperty Name
+    $manifestExported = ($manifestContent.ExportedFunctions).Keys
+}
+Describe $ModuleName {
 
     Context 'Exported Commands' -Fixture {
-        $manifestExported = ($manifestContent.ExportedFunctions).Keys
 
         Context 'Number of commands' -Fixture {
             It -Name 'Exports the same number of public functions as what is listed in the Module Manifest' -Test {
@@ -24,8 +29,11 @@ Describe $ModuleName {
             }
         }
 
-        Context 'Explicitly exported commands' -Fixture {
+        Context 'Explicitly exported commands' -ForEach $moduleExported {
             foreach ($command in $moduleExported) {
+                BeforeAll {
+                    $command = $_
+                }
                 It -Name "Includes the $command in the Module Manifest ExportedFunctions" -Test {
                     $manifestExported -contains $command | Should -BeTrue
                 }
@@ -33,8 +41,11 @@ Describe $ModuleName {
         }
     }
 
-    Context 'Command Help' -Fixture {
+    Context 'Command Help' -ForEach $moduleExported {
         foreach ($command in $moduleExported) {
+            BeforeAll {
+                $help = Get-Help -Name $_ -Full
+            }
             Context $command -Fixture {
                 $help = Get-Help -Name $command -Full
 

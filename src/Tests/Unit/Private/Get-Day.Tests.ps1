@@ -10,15 +10,16 @@ if (Get-Module -Name $ModuleName -ErrorAction 'SilentlyContinue') {
 }
 Import-Module $PathToManifest -Force
 #-------------------------------------------------------------------------
-$WarningPreference = "SilentlyContinue"
-#-------------------------------------------------------------------------
-#Import-Module $moduleNamePath -Force
 
 InModuleScope 'AppVeyorTest' {
     #-------------------------------------------------------------------------
     $WarningPreference = "SilentlyContinue"
     #-------------------------------------------------------------------------
     Describe 'Get-Day Private Function Tests' -Tag Unit {
+        BeforeAll {
+            $WarningPreference = 'SilentlyContinue'
+            $ErrorActionPreference = 'SilentlyContinue'
+        } #beforeAll
         Context 'Error' {
 
             It 'should return unknown if an error is encountered getting the date' {
