@@ -11,11 +11,12 @@ if (Get-Module -Name $ModuleName -ErrorAction 'SilentlyContinue') {
 }
 Import-Module $PathToManifest -Force
 #-------------------------------------------------------------------------
-$WarningPreference = "SilentlyContinue"
-#-------------------------------------------------------------------------
 
 Describe 'AppVeyorVault Vault Extension Tests' -Tag Unit {
     BeforeAll {
+        $WarningPreference = "SilentlyContinue"
+        $vaultName = 'AWSVault'
+        $PathToManifest = [System.IO.Path]::Combine('..', '..', $ModuleName, "$ModuleName.psd1")
         Import-Module -Name Microsoft.PowerShell.SecretManagement
         Get-SecretVault $vaultName -ErrorAction Ignore | Unregister-SecretVault -ErrorAction Ignore
         Register-SecretVault -Name $vaultName -ModuleName $PathToManifest
@@ -26,10 +27,10 @@ Describe 'AppVeyorVault Vault Extension Tests' -Tag Unit {
     } #afterAll
 
     Context 'Your First Vault Test' {
-        <#
-            It 'should ...' {
 
-            } #it
-        #>
+        It 'should always be true' {
+            $true | Should -BeTrue
+        } #it
+
     } #context_FunctionName
 } #describe_vaultExtension

@@ -82,9 +82,9 @@ Enter-Build {
     # Ensure our builds fail until if below a minimum defined code test coverage threshold
     $script:coverageThreshold = 0
 
-    [version]$script:MinPesterVersion = '4.0.0'
-    [version]$script:MaxPesterVersion = '4.99.99'
 
+    [version]$script:MinPesterVersion = '5.2.2'
+    [version]$script:MaxPesterVersion = '5.99.99'
 } #Enter-Build
 
 # Define headers as separator, task path, synopsis, and location, e.g. for Ctrl+Click in VSCode.
@@ -175,13 +175,14 @@ Add-BuildTask Analyze {
 Add-BuildTask AnalyzeTests -After Analyze {
     if (Test-Path -Path $script:TestsPath) {
 
-        $scriptAnalyzerParams = @{
-            Path    = $script:TestsPath
-            Setting = 'PSScriptAnalyzerSettings.psd1'
-            Recurse = $true
-            Verbose = $false
-        }
 
+        $scriptAnalyzerParams = @{
+            Path        = $script:TestsPath
+            Setting     = 'PSScriptAnalyzerSettings.psd1'
+            ExcludeRule = 'PSUseDeclaredVarsMoreThanAssignments'
+            Recurse     = $true
+            Verbose     = $false
+        }
 
         Write-Build White '      Performing Test ScriptAnalyzer checks...'
         $scriptAnalyzerResults = Invoke-ScriptAnalyzer @scriptAnalyzerParams
@@ -236,23 +237,24 @@ Add-BuildTask Test {
         New-Item -Path $testOutPutPath -ItemType Directory | Out-Null
     }
     if (Test-Path -Path $script:UnitTestsPath) {
-        $invokePesterParams = @{
-            Path                         = 'Tests\Unit'
-            Strict                       = $true
-            PassThru                     = $true
-            Verbose                      = $false
-            EnableExit                   = $false
-            CodeCoverage                 = "$ModuleName\*\*.psm1"
-            CodeCoverageOutputFile       = "$codeCovPath\CodeCoverage.xml"
-            CodeCoverageOutputFileFormat = 'JaCoCo'
-            OutputFile                   = "$testOutPutPath\PesterTests.xml"
-            OutputFormat                 = 'NUnitXML'
-        }
+
+        $pesterConfiguration = [PesterConfiguration]::new()
+        $pesterConfiguration.run.Path = $script:TestsPath
+        $pesterConfiguration.Run.PassThru = $true
+        $pesterConfiguration.Run.Exit = $false
+        $pesterConfiguration.CodeCoverage.Enabled = $true
+        $pesterConfiguration.CodeCoverage.Path = "..\..\$ModuleName\*\*.psm1"
+        $pesterConfiguration.CodeCoverage.CoveragePercentTarget = $script:coverageThreshold
+        $pesterConfiguration.CodeCoverage.OutputPath = "$codeCovPath\CodeCoverage.xml"
+        $pesterConfiguration.CodeCoverage.OutputFormat = 'JaCoCo'
+        $pesterConfiguration.TestResult.Enabled = $true
+        $pesterConfiguration.TestResult.OutputPath = "$testOutPutPath\PesterTests.xml"
+        $pesterConfiguration.TestResult.OutputFormat = 'NUnitXml'
+        $pesterConfiguration.Output.Verbosity = 'Detailed'
 
         Write-Build White '      Performing Pester Unit Tests...'
         # Publish Test Results as NUnitXml
-        $testResults = Invoke-Pester @invokePesterParams
-
+        $testResults = Invoke-Pester -Configuration $pesterConfiguration
 
         # This will output a nice json for each failed test (if running in CodeBuild)
         if ($env:CODEBUILD_BUILD_ARN) {
@@ -266,11 +268,12 @@ Add-BuildTask Test {
         $numberFails = $testResults.FailedCount
         Assert-Build($numberFails -eq 0) ('Failed "{0}" unit tests.' -f $numberFails)
 
-        Write-Build Gray ('      ...CODE COVERAGE - NumberOfCommandsExecuted: {0}' -f $testResults.CodeCoverage.NumberOfCommandsExecuted)
-        Write-Build Gray ('      ...CODE COVERAGE - NumberOfCommandsAnalyzed: {0}' -f $testResults.CodeCoverage.NumberOfCommandsAnalyzed)
+
+        Write-Build Gray ('      ...CODE COVERAGE - CommandsExecutedCount: {0}' -f $testResults.CodeCoverage.CommandsExecutedCount)
+        Write-Build Gray ('      ...CODE COVERAGE - CommandsAnalyzedCount: {0}' -f $testResults.CodeCoverage.CommandsAnalyzedCount)
 
         if ($testResults.CodeCoverage.NumberOfCommandsExecuted -ne 0) {
-            $coveragePercent = '{0:N2}' -f ($testResults.CodeCoverage.NumberOfCommandsExecuted / $testResults.CodeCoverage.NumberOfCommandsAnalyzed * 100)
+            $coveragePercent = '{0:N2}' -f ($testResults.CodeCoverage.CommandsExecutedCount / $testResults.CodeCoverage.CommandsAnalyzedCount * 100)
 
             <#
             if ($testResults.CodeCoverage.NumberOfCommandsMissed -gt 0) {
@@ -282,7 +285,7 @@ Add-BuildTask Test {
                 throw ('Failed to meet code coverage threshold of {0}% with only {1}% coverage' -f $coverageThreshold, $coveragePercent)
             }
             else {
-                Write-Build Cyan "      $('Covered {0}% of {1} analyzed commands in {2} files.' -f $coveragePercent,$testResults.CodeCoverage.NumberOfCommandsAnalyzed,$testResults.CodeCoverage.NumberOfFilesAnalyzed)"
+                Write-Build Cyan "      $('Covered {0}% of {1} analyzed commands in {2} files.' -f $coveragePercent,$testResults.CodeCoverage.CommandsAnalyzedCount,$testResults.CodeCoverage.FilesAnalyzedCount)"
                 Write-Build Green '      ...Pester Unit Tests Complete!'
             }
         }
@@ -290,7 +293,6 @@ Add-BuildTask Test {
             # account for new module build condition
             Write-Build Yellow '      Code coverage check skipped. No commands to execute...'
         }
-
 
     }
 } #Test
@@ -301,13 +303,16 @@ Add-BuildTask DevCC {
     Write-Build White "      Importing desired Pester version. Min: $script:MinPesterVersion Max: $script:MaxPesterVersion"
     Remove-Module -Name Pester -Force -ErrorAction SilentlyContinue # there are instances where some containers have Pester already in the session
     Import-Module -Name Pester -MinimumVersion $script:MinPesterVersion -MaximumVersion $script:MaxPesterVersion -ErrorAction 'Stop'
-    $invokePesterParams = @{
-        Path                   = 'Tests\Unit'
-        CodeCoverage           = "$ModuleName\*\*.ps1"
-        CodeCoverageOutputFile = '..\..\..\cov.xml'
-    }
-    Invoke-Pester @invokePesterParams
 
+    $pesterConfiguration = [PesterConfiguration]::new()
+    $pesterConfiguration.run.Path = 'Tests\Unit'
+    $pesterConfiguration.CodeCoverage.Enabled = $true
+    $pesterConfiguration.CodeCoverage.Path = "$PSScriptRoot\$ModuleName\*\*.ps1"
+    $pesterConfiguration.CodeCoverage.CoveragePercentTarget = $script:coverageThreshold
+    $pesterConfiguration.CodeCoverage.OutputPath = '..\..\..\cov.xml'
+    $pesterConfiguration.CodeCoverage.OutputFormat = 'CoverageGutters'
+
+    Invoke-Pester -Configuration $pesterConfiguration
     Write-Build Green '      ...Code Coverage report generated!'
 } #DevCC
 
@@ -340,18 +345,16 @@ Add-BuildTask InfraTest {
 
         Write-Build White "      Performing Pester Infrastructure Tests in $($invokePesterParams.path)"
 
-        $invokePesterParams = @{
-            Path       = 'Tests\Infrastructure'
-            Strict     = $true
-            PassThru   = $true
-            Verbose    = $false
-            EnableExit = $false
-        }
 
+        $pesterConfiguration = [PesterConfiguration]::new()
+        $pesterConfiguration.run.Path = 'Tests\Infrastructure'
+        $pesterConfiguration.Run.PassThru = $true
+        $pesterConfiguration.Run.Exit = $false
+        $pesterConfiguration.CodeCoverage.Enabled = $false
+        $pesterConfiguration.TestResult.Enabled = $false
+        $pesterConfiguration.Output.Verbosity = 'Detailed'
 
-        # Publish Test Results as NUnitXml
-        $testResults = Invoke-Pester @invokePesterParams
-
+        $testResults = Invoke-Pester -Configuration $pesterConfiguration
         # This will output a nice json for each failed test (if running in CodeBuild)
         if ($env:CODEBUILD_BUILD_ARN) {
             $testResults.TestResult | ForEach-Object {
