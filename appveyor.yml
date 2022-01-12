@@ -28,22 +28,22 @@ for:
   init:
     - ps: $PSVersionTable
     # uncomment the line below to explore what modules/variables/env variables are available in the build image
-    - ps: Get-Module -ListAvailable; (Get-Variable).GetEnumerator() | Sort-Object Name | Out-String; (Get-ChildItem env:*).GetEnumerator() | Sort-Object Name | Out-String
+    # - ps: Get-Module -ListAvailable; (Get-Variable).GetEnumerator() | Sort-Object Name | Out-String; (Get-ChildItem env:*).GetEnumerator() | Sort-Object Name | Out-String
     - ps: Install-PackageProvider -Name "NuGet" -Confirm:$false -Force -Verbose
     - ps: Install-Module -Name PowerShellGet -Repository PSGallery -Force
   install:
     - ps: . .\actions_bootstrap.ps1
   build_script:
-    - ps: Invoke-Build -File .\src\AppVeyorTest.build.ps1
+    - ps: Invoke-Build -File .\src\AppVeyorVault.build.ps1
 
 init:
   - pwsh: $PSVersionTable
   # uncomment the line below to explore what modules/variables/env variables are available in the build image
-  - pwsh: Get-Module -ListAvailable; (Get-Variable).GetEnumerator() | Sort-Object Name | Out-String; (Get-ChildItem env:*).GetEnumerator() | Sort-Object Name | Out-String
+  # - pwsh: Get-Module -ListAvailable; (Get-Variable).GetEnumerator() | Sort-Object Name | Out-String; (Get-ChildItem env:*).GetEnumerator() | Sort-Object Name | Out-String
 install:
   - pwsh: . .\actions_bootstrap.ps1
 build_script:
-  - pwsh: Invoke-Build -File .\src\AppVeyorTest.build.ps1
+  - pwsh: Invoke-Build -File .\src\AppVeyorVault.build.ps1
 
 artifacts:
   - path: src/Artifacts/testOutput/PesterTests.xml
