@@ -31,10 +31,7 @@ $null = $modulesToInstall.Add(([PSCustomObject]@{
             ModuleVersion = '0.12.0'
         }))
 
-$null = $modulesToInstall.Add(([PSCustomObject]@{
-            ModuleName    = 'Microsoft.PowerShell.SecretManagement'
-            ModuleVersion = '1.1.1'
-        }))
+
 
 'Installing PowerShell Modules'
 foreach ($module in $modulesToInstall) {
