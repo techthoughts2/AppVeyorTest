@@ -9,7 +9,7 @@
     #________________________________________
     #CustomRulePath
     #Specify CustomRulePath when you have a large set of custom rules you'd like to reference
-    #CustomRulePath = "Module\InjectionHunter\1.1.0\InjectionHunter.psd1"
+    #CustomRulePath = "Module\InjectionHunter\1.0.0\InjectionHunter.psd1"
     #________________________________________
     #IncludeRules
     #Specify IncludeRules when you only want to run specific subset of rules instead of the default rule set.
@@ -18,9 +18,9 @@
     #________________________________________
     #ExcludeRules
     #Specify ExcludeRules when you want to exclude a certain rule from the the default set of rules.
-    ExcludeRules        = @(
-        'PSUseShouldProcessForStateChangingFunctions','PSReviewUnusedParameter'
-    )
+    #ExcludeRules = @(
+    #    'PSUseDeclaredVarsMoreThanAssignments'
+    #)
     #________________________________________
     #Rules
     #Here you can specify customizations for particular rules. Several examples are included below:
@@ -58,4 +58,3 @@
     #}
     #________________________________________
 }
-
