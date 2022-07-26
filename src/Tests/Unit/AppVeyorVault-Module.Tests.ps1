@@ -1,9 +1,9 @@
 #-------------------------------------------------------------------------
 Set-Location -Path $PSScriptRoot
 #-------------------------------------------------------------------------
-$ModuleName = 'AppVeyorTest'
+$ModuleName = 'AppVeyorVault'
 $PathToManifest = [System.IO.Path]::Combine('..', '..', $ModuleName, "$ModuleName.psd1")
-$PathToModule = [System.IO.Path]::Combine('..', '..', $ModuleName, "$ModuleName.psm1")
+# $PathToModule = [System.IO.Path]::Combine('..', '..', $ModuleName, "$ModuleName.psm1")
 #-------------------------------------------------------------------------
 Describe 'Module Tests' -Tag Unit {
     Context "Module Tests" {
@@ -12,13 +12,13 @@ Describe 'Module Tests' -Tag Unit {
             { $script:manifestEval = Test-ModuleManifest -Path $PathToManifest } | Should -Not -Throw
             $? | Should -BeTrue
         } #manifestTest
-        It 'root module AppVeyorTest.psm1 should exist' {
-            $PathToModule | Should -Exist
-            $? | Should -BeTrue
-        } #psm1Exists
-        It 'manifest should contain AppVeyorTest.psm1' {
+        # It 'root module AppVeyorVault.psm1 should not exist' {
+        #     $PathToModule | Should -Not -Exist
+        #     $? | Should -BeTrue
+        # } #psm1Exists
+        It 'manifest should not contain AppVeyorVault.psm1' {
             $PathToManifest |
-            Should -FileContentMatchExactly "AppVeyorTest.psm1"
+            Should -Not -Contain "AppVeyorVault.psm1"
         } #validPSM1
         It 'should have a matching module name in the manifest' {
             $script:manifestEval.Name | Should -BeExactly $ModuleName
@@ -40,6 +40,9 @@ Describe 'Module Tests' -Tag Unit {
                 $tag | Should -Not -Match '\s'
             }
         } #tagSpaces
+        It 'should include the SecretManagement tag in its PrivateData section' {
+            $script:manifestEval.Tags | Should -Contain 'SecretManagement'
+        } #SecretManagement
         It 'should have a valid project Uri' {
             $script:manifestEval.ProjectUri | Should -Not -BeNullOrEmpty
         } #uri
