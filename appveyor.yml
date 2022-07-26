@@ -52,3 +52,4 @@ artifacts:
     name: CodeCoverageResults
   - path: src/Archive/*.zip
     name: BuildArtifact
+

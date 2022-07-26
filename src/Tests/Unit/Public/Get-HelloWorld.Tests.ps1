@@ -10,13 +10,15 @@ if (Get-Module -Name $ModuleName -ErrorAction 'SilentlyContinue') {
 }
 Import-Module $PathToManifest -Force
 #-------------------------------------------------------------------------
+$WarningPreference = "SilentlyContinue"
+#-------------------------------------------------------------------------
+#Import-Module $moduleNamePath -Force
 
 InModuleScope 'AppVeyorTest' {
+    #-------------------------------------------------------------------------
+    $WarningPreference = "SilentlyContinue"
+    #-------------------------------------------------------------------------
     Describe 'Get-HellowWorld Public Function Tests' -Tag Unit {
-        BeforeAll {
-            $WarningPreference = 'SilentlyContinue'
-            $ErrorActionPreference = 'SilentlyContinue'
-        } #beforeAll
         Context 'Error' {
 
             # It 'should ...' {
