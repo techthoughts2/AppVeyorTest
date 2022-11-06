@@ -4,7 +4,7 @@
     IncludeDefaultRules = $true
     #________________________________________
     #Severity
-    #Specify Severity when you want to limit generated diagnostic records to a sepecific subset: [ Error | Warning | Information ]
+    #Specify Severity when you want to limit generated diagnostic records to a specific subset: [ Error | Warning | Information ]
     Severity            = @('Error', 'Warning')
     #________________________________________
     #CustomRulePath
@@ -18,9 +18,9 @@
     #________________________________________
     #ExcludeRules
     #Specify ExcludeRules when you want to exclude a certain rule from the the default set of rules.
-    #ExcludeRules = @(
-    #    'PSUseDeclaredVarsMoreThanAssignments'
-    #)
+    ExcludeRules        = @(
+        'PSUseShouldProcessForStateChangingFunctions','PSReviewUnusedParameter'
+    )
     #________________________________________
     #Rules
     #Here you can specify customizations for particular rules. Several examples are included below:
@@ -58,3 +58,4 @@
     #}
     #________________________________________
 }
+
