@@ -45,7 +45,7 @@ install:
 build_script:
   - pwsh: Invoke-Build -File .\src\AppVeyorTest.build.ps1
 after_build:
-  - pwsh: $wc = New-Object 'System.Net.WebClient';$wc.UploadFile("https://ci.appveyor.com/api/testresults/xunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path src/Artifacts/testOutput/PesterTests.xml))
+  - pwsh: $wc = New-Object 'System.Net.WebClient';$wc.UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path src/Artifacts/testOutput/PesterTests.xml))
 
 artifacts:
   - path: src/Artifacts/testOutput/PesterTests.xml
