@@ -7,25 +7,25 @@ Get-PackageProvider -Name Nuget -ForceBootstrap | Out-Null
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 
 # List of PowerShell Modules required for the build
-$modulesToInstall = [System.Collections.ArrayList]::new()
+$modulesToInstall = New-Object System.Collections.Generic.List[object]
 # https://github.com/pester/Pester
-$null = $modulesToInstall.Add(([PSCustomObject]@{
+[void]$modulesToInstall.Add(([PSCustomObject]@{
             ModuleName    = 'Pester'
-            ModuleVersion = '5.5.0'
+            ModuleVersion = '5.6.1'
         }))
 # https://github.com/nightroman/Invoke-Build
-$null = $modulesToInstall.Add(([PSCustomObject]@{
+[void]$modulesToInstall.Add(([PSCustomObject]@{
             ModuleName    = 'InvokeBuild'
-            ModuleVersion = '5.10.5'
+            ModuleVersion = '5.11.3'
         }))
 # https://github.com/PowerShell/PSScriptAnalyzer
-$null = $modulesToInstall.Add(([PSCustomObject]@{
+[void]$modulesToInstall.Add(([PSCustomObject]@{
             ModuleName    = 'PSScriptAnalyzer'
-            ModuleVersion = '1.21.0'
+            ModuleVersion = '1.22.0'
         }))
 # https://github.com/PowerShell/platyPS
 # older version used due to: https://github.com/PowerShell/platyPS/issues/457
-$null = $modulesToInstall.Add(([PSCustomObject]@{
+[void]$modulesToInstall.Add(([PSCustomObject]@{
             ModuleName    = 'platyPS'
             ModuleVersion = '0.12.0'
         }))

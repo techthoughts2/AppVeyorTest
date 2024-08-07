@@ -1,15 +1,11 @@
-#-------------------------------------------------------------------------
-Set-Location -Path $PSScriptRoot
-#-------------------------------------------------------------------------
-$ModuleName = 'AppVeyorTest'
-$PathToManifest = [System.IO.Path]::Combine('..', '..', '..', $ModuleName, "$ModuleName.psd1")
-#-------------------------------------------------------------------------
-if (Get-Module -Name $ModuleName -ErrorAction 'SilentlyContinue') {
+BeforeAll {
+    Set-Location -Path $PSScriptRoot
+    $ModuleName = 'AppVeyorTest'
+    $PathToManifest = [System.IO.Path]::Combine('..', '..', '..', $ModuleName, "$ModuleName.psd1")
     #if the module is already in memory, remove it
-    Remove-Module -Name $ModuleName -Force
+    Get-Module $ModuleName -ErrorAction SilentlyContinue | Remove-Module -Force
+    Import-Module $PathToManifest -Force
 }
-Import-Module $PathToManifest -Force
-#-------------------------------------------------------------------------
 
 InModuleScope 'AppVeyorTest' {
     #-------------------------------------------------------------------------
@@ -59,5 +55,6 @@ InModuleScope 'AppVeyorTest' {
             } #it
 
         } #context_Success
-    } #describe_Get-HellowWorld
+    } #describe_Get-HelloWorld
 } #inModule
+
